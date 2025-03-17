@@ -74,6 +74,43 @@ def hexagon(shape, radius, shift=(0, 0), rotate=False, antialias=True):
 
     return mask
 
+def pie_slice(shape, inner_radius, outer_radius, angle, shift=(0, 0), rotate=0, antialias=True):
+    """Draw a pie slice
+
+    Parameters
+    ----------
+    shape : array_like
+        Size of output in pixels (nrows, ncols)
+    radius : float
+        Radius of outscribing circle (which also equals the side length) in
+        pixels.
+    shift : tuple of floats, optional
+        How far to shift center in (rows, cols). Default is (0, 0).
+    rotate : bool, optional
+        Rotate mask so that flat sides are aligned with the Y direction instead
+        of the default orientation which is aligned with the X direction.
+    antialias : bool, optional
+        If True (default), the shape edges are antialiased.
+
+    Returns
+    -------
+    ndarray
+
+    """
+    #Create annular mask
+    outer = lentil.circle(shape, outer_radius, shift=shift, antialias=antialias)
+    inner = lentil.circle(shape, inner_radius, shift=shift, antialias=antialias)
+    mask = outer - inner
+
+    sect = lentil.sector(shape, angle, shift=shift, rotate=rotate, antialias=antialias)
+
+    return mask*sect
+
+def sector(shape, angle, shift=(0,0), rotate=0, antialias=True):
+    #TODO: actually implement antialiasing
+    r, c = lentil.helper.mesh(shape, shift, rotate)
+    sect = np.logical_and(np.logical_and(c >= 0, r >= 0), r < (np.tan(np.deg2rad(angle))*c))
+    return sect
 
 def rectangle(shape, width, height, shift=(0,0), angle=0, antialias=True):
     """Draw a rectangle

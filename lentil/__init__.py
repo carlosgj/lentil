@@ -40,12 +40,14 @@ from lentil.propagate import (
 
 from lentil import radiometry
 
-from lentil.segmented import hex_segments
+from lentil.segmented import hex_segments, pie_segments
 
 from lentil.shape import (
     circle,
 	hexagon,
 	rectangle,
+    pie_slice,
+    sector,
     spider
 )
 
