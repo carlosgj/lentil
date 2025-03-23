@@ -132,21 +132,21 @@ def hex_to_rc(hex, radius, rotate=False):
     return -y, x
 
 def pie_segments(num_segs, inner_radius, outer_radius, seg_gap, rotate=0, antialias=True,
-                 flatten=False, pad=2, drop=(0,)):
+                 flatten=False, pad=2, drop=()):
     """Draw a segmented aperture made up of hexagonal segments
 
     Parameters
     ----------
-    rings : int
-        Number of segment rings. Must be >= 1.
-    seg_radius : float
+    num_segs : int
+        Number of segments. Must be >= 2.
+    inner_radius : float
+        Radius of centeral perforation in pixels
+    outer_radius : float
         Segment outscribing radius in pixels
     seg_gap : float
         Spacing between adjacent segments in pixels
-    rotate : bool, optional
-        Rotate segments so that flat sides are aligned with the Y direction 
-        instead of the default orientation which is aligned with the X 
-        direction.
+    rotate : float, optional
+        Clocking of segment pattern
     antialias : bool, optional
         If True (default), the segment edges are antialiased.
     flatten : bool, optional
@@ -155,27 +155,11 @@ def pie_segments(num_segs, inner_radius, outer_radius, seg_gap, rotate=0, antial
     pad : int, optional
         Number of additional pixels to zero-pad output by. Default is 2.
     drop : list_like, optional
-        Segments to exclude from output. 0 represents the central segment. 
+        Segments to exclude from output.
     
     Returns
     -------
     ndarray
-
-    Examples
-    --------
-    .. plot::
-        :include-source:
-        :context: reset
-        :scale: 50
-
-        >>> import matplotlib.pyplot as plt
-        >>> import lentil
-        >>> mask = lentil.hex_segments(rings=2, seg_radius=64, seg_gap=2)
-        >>> fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(5, 2))
-        >>> ax[0].imshow(np.sum(mask, axis=0))
-        >>> ax[0].set_title('Full aperture')
-        >>> ax[1].imshow(mask[0])
-        >>> ax[1].set_title('Segment 1')
 
     """
     size = int(outer_radius*2 + pad * 2)
@@ -185,10 +169,11 @@ def pie_segments(num_segs, inner_radius, outer_radius, seg_gap, rotate=0, antial
     mask = []
 
     for seg in range(num_segs):
-        basic = lentil.pie_slice(shape, inner_radius, outer_radius, angle, rotate=-angle*seg, antialias=antialias)
-        basic *= lentil.spider(shape, seg_gap, angle=-angle*seg, antialias=antialias)
-        basic *= lentil.spider(shape, seg_gap, angle=-angle*(seg + 1), antialias=antialias)
-        mask.append(basic)
+        thisSeg = lentil.pie_slice(shape, inner_radius, outer_radius, angle, rotate=(angle*seg)+rotate, antialias=antialias)
+        thisSeg *= lentil.spider(shape, seg_gap, angle=-(angle*seg+rotate), antialias=antialias)
+        thisSeg *= lentil.spider(shape, seg_gap, angle=-(angle*(seg + 1)+rotate), antialias=antialias)
+        if seg not in drop:
+            mask.append(thisSeg)
     
     mask = np.asarray(mask)
     if flatten:

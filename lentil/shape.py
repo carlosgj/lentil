@@ -81,14 +81,17 @@ def pie_slice(shape, inner_radius, outer_radius, angle, shift=(0, 0), rotate=0, 
     ----------
     shape : array_like
         Size of output in pixels (nrows, ncols)
-    radius : float
-        Radius of outscribing circle (which also equals the side length) in
-        pixels.
+    inner_radius : float
+        Radius of inner circle in pixels. Can be 0, for no inside cutout.
+    outer_radius : float
+        Radius of outer circle in pixels.
+    angle : float
+        Central angle of pie slice in degrees.
     shift : tuple of floats, optional
         How far to shift center in (rows, cols). Default is (0, 0).
-    rotate : bool, optional
-        Rotate mask so that flat sides are aligned with the Y direction instead
-        of the default orientation which is aligned with the X direction.
+    rotate : float, optional
+        Rotation of sector in degrees counterclockwise from horizontal.
+        Default is 0.
     antialias : bool, optional
         If True (default), the shape edges are antialiased.
 
@@ -102,15 +105,37 @@ def pie_slice(shape, inner_radius, outer_radius, angle, shift=(0, 0), rotate=0, 
     inner = lentil.circle(shape, inner_radius, shift=shift, antialias=antialias)
     mask = outer - inner
 
+    #Create sector mask
     sect = lentil.sector(shape, angle, shift=shift, rotate=rotate, antialias=antialias)
 
     return mask*sect
 
 def sector(shape, angle, shift=(0,0), rotate=0, antialias=True):
-    #TODO: actually implement antialiasing
-    r, c = lentil.helper.mesh(shape, shift, rotate)
-    sect = np.logical_and(np.logical_and(c >= 0, r >= 0), r < (np.tan(np.deg2rad(angle))*c))
-    return sect
+    """Draw a circular sector (to bounds of shape)
+
+    Parameters
+    ----------
+    shape : array_like
+        Size of output in pixels (nrows, ncols)
+    angle : float
+        Central angle of sector in degrees.
+    rotate : float, optional
+        Rotation of sector in degrees counterclockwise from horizontal.
+        Default is 0.
+
+    Returns
+    -------
+    ndarray
+
+    """
+    r, c = lentil.helper.mesh(shape, shift, -rotate)
+    if antialias:
+        foo = np.clip(np.tan(np.deg2rad(angle))*c-r+0.5, 0, 1)
+        bar = np.clip(r+0.5, 0, 1)
+        return foo*bar
+    else:
+        sect = np.logical_and(np.logical_and(c >= 0, r >= 0), r < (np.tan(np.deg2rad(angle))*c))
+        return sect
 
 def rectangle(shape, width, height, shift=(0,0), angle=0, antialias=True):
     """Draw a rectangle
